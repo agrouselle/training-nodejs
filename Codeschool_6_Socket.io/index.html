@@ -1,0 +1,68 @@
+<html>
+<head>
+	<title>Welcome to Chattr</title>
+</head>
+<body>
+	<h2 id="status">Connecting...</h2>
+
+	<ul id="users">
+
+	</ul>
+
+	<ul id="messages">
+
+	</ul>
+
+
+
+	<form id="chat_form">
+		<input id="chat_input" type="text" value="" placeholder="Type your message here..." size="50" />
+	</form>
+</body>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+	var addMessage = function(message){
+		$('#messages').append('<li>' + message + '</li>')
+	}
+
+	var addUser = function(username){
+		$('#users').append('<li data-user="' + username + '">' + username + '</li>')
+	}
+
+	var removeUser = function(username){
+		console.log("removing " + username)
+		$('#users li[data-user=' + username + ']').remove()
+	}
+
+	var socket = io.connect('http://localhost:8080')
+	
+	socket.on('messages', function(data){
+		addMessage(data.username + ': ' + data.message)
+	})
+
+	socket.on('add_chatter', function(data){
+		addMessage(data.username + ' has joined the chat')
+		addUser(data.username)
+	})
+
+	socket.on('remove_chatter', function(data){
+		addMessage(data.username + ' has left the chat')
+		removeUser(data.username)
+	})
+
+	socket.on('connect', function(data){
+		$('#status').html('Connected to Chattr')
+		username = prompt('What is your username?')
+		socket.emit('join', {username: username})
+	})
+
+	$('#chat_form').on('submit', function(e){
+		var message = $('#chat_input').val()
+		socket.emit('messages', {message: message})
+		
+		e.preventDefault()
+		$('#chat_input').val('')
+	})
+</script>
+</html>
